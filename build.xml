@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="switch">
+<!--    
+<delete>
+    <fileset dir="src" includes=".class"/>
+</delete>
+<delete file="./library/Switch.jar"
+    />
+-->
+<javac srcdir="./src"
+       destdir="./build"
+       classpath="C:\Users\Francesco\Documents\Processing\libraries\arduino\library\Arduino.jar"
+/>
+
+<jar destfile="./library/Switch.jar"
+     basedir="./build"
+     
+/>
+
+</project>
