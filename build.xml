@@ -8,8 +8,8 @@
     />
 -->
 <javac srcdir="./src"
-       destdir="./build"
-       classpath="C:\Users\Francesco\Documents\Processing\libraries\arduino\library\Arduino.jar"
+       destdir="./build/Switch"
+       classpath="C:\Users\Francesco\Documents\Processing\libraries\arduino\library\Arduino.jar;C:\Users\Francesco\Documents\Processing\libraries\oscP5\library\oscP5.jar"
 />
 
 <jar destfile="./library/Switch.jar"

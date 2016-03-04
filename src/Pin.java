@@ -18,18 +18,19 @@ public class Pin{
         this.pin = num;
     }
     
-    public boolean hasChanged(int v){
-        return (v != lastValue);
+    public boolean hasChanged(){
+        int v = read();
+        boolean result = v != lastValue;
+        lastValue = v;
+        return (result);
     }
     
     public int read(){
-        return 0; //does nothing succesfully
+        return 0; //must be implemented in subclasses
     }
     
     public int value(){
-        int res;
-        int v = read();
-        res = hasChanged(v) ? (lastValue = v):lastValue;
-        return res;
+        return lastValue;
     }
+    
 }

@@ -1,7 +1,7 @@
 public class DigitalPin extends Pin{
     
     public DigitalPin(int num){
-        super("A", num);
+        super("D", num);
     }
     
     public int read(){
