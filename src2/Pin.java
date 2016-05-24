@@ -3,24 +3,26 @@ package oscSwitch;
 
 import org.firmata.Firmata;
 import cc.arduino.*;
+import processing.core.PApplet;
 
 
-public class Pin{
+public abstract class Pin{
     
     public int lastValue;
     public String tag;
     public Firmata firm;
     public Arduino arduino;
     public int pin;
-    
+
     public class FirmataWriter implements Firmata.Writer {
         public void write(int val) {
             //not implemented yet
         }
     }
 
-    public  Pin(String type, int num){
-        this.firm = new Firmata(new FirmataWriter());
+    public  Pin(Arduino arduino,String type, int num){
+        //this.firm = new Firmata(new FirmataWriter());
+        this.arduino= arduino;
         this.tag = type+String.valueOf(num);
         this.pin = num;
     }
@@ -32,9 +34,7 @@ public class Pin{
         return (result);
     }
     
-    public int read(){
-        return 0; //must be implemented in subclasses
-    }
+    public abstract int read();
     
     public int value(){
         return lastValue;
