@@ -10,6 +10,8 @@ public class OscSwitch {
 
     private static final int NUM_ANALOG_PINS = 6;
     private static final int NUM_DIGITAL_PINS = 14;
+    // SERIAL_RATE=9600 implies that you load the FB_StandarFirmata firmaware inside the arduino board
+    private static final int SERIAL_RATE=9600;
     public Pin[] pins = new Pin[NUM_ANALOG_PINS + NUM_DIGITAL_PINS];
     public NetAddress remoteLocation;
     public OscP5 oscP5;
@@ -17,11 +19,11 @@ public class OscSwitch {
     public PApplet applet;
 
 
-    public OscSwitch(PApplet applet, String address, int port, int irate) {
+    public OscSwitch(PApplet applet, String address, int port) {
 
         this.applet = applet;
-        arduino = new Arduino(this.applet, Arduino.list()[0], irate);
-        oscP5 = new OscP5(this, port);
+        arduino = new Arduino(this.applet, Arduino.list()[0], SERIAL_RATE);
+        oscP5 = new OscP5(this, port+1);
         remoteLocation = new NetAddress(address, port);
 
         int k;
@@ -39,17 +41,18 @@ public class OscSwitch {
         return pins[index];
     }
 
+
     public void oscOut() {
         for (int k = 0; k < pins.length; ++k) {
             if (pins[k].hasChanged()) {
-            //pins[k].hasChanged();
-            oscThisOut(k);
+                oscThisOut(k);
             }
         }
     }
 
+
     public void oscThisOut(int k) {
-        OscMessage msg = new OscMessage("/ " + pins[k].tag);
+        OscMessage msg = new OscMessage("/" + pins[k].tag);
         msg.add(pins[k].value());
         oscP5.send(msg, remoteLocation);
 

@@ -10,7 +10,6 @@ public class DigitalPin extends Pin {
     
     public int read(){
         return arduino.digitalRead(pin);
-        //return firm.digitalRead(pin);
     }
 
 }

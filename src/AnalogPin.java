@@ -1,9 +1,6 @@
 package oscSwitch;
 
-
 import cc.arduino.Arduino;
-
-import java.applet.Applet;
 
 public class AnalogPin extends Pin {
     
@@ -13,8 +10,6 @@ public class AnalogPin extends Pin {
     
     public int read(){
         return arduino.analogRead(pin);
-        //return firm.digitalRead(pin);
-
     }
 
 }

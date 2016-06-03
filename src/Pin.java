@@ -21,7 +21,6 @@ public abstract class Pin{
     }
 
     public  Pin(Arduino arduino,String type, int num){
-        //this.firm = new Firmata(new FirmataWriter());
         this.arduino= arduino;
         this.tag = type+String.valueOf(num);
         this.pin = num;
@@ -33,14 +32,7 @@ public abstract class Pin{
         lastValue = v;
         return (result);
     }
-    /*
-    public int hasChanged(){
-        int v = read();
-        //boolean result = v != lastValue;
-        lastValue = v;
-        return (lastValue);
-    }
-    */
+
     public abstract int read();
     
     public int value(){
