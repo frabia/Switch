@@ -4,7 +4,6 @@ import cc.arduino.*;
 import netP5.*;
 import oscP5.*;
 import processing.core.PApplet;
-import org.firmata.*;
 
 public class OscSwitch {
 
@@ -17,24 +16,24 @@ public class OscSwitch {
     public OscP5 oscP5;
     public Arduino arduino;
     public PApplet applet;
+    int inIVal;
 
 
-    public OscSwitch(PApplet applet, String address, int port) {
+    public OscSwitch(PApplet applet, String address, int oscOutPort, int oscInPort, String addrPattern) {
 
         this.applet = applet;
         arduino = new Arduino(this.applet, Arduino.list()[0], SERIAL_RATE);
-        oscP5 = new OscP5(this, port+1);
-        remoteLocation = new NetAddress(address, port);
+        oscP5 = new OscP5(this, oscInPort);
+        remoteLocation = new NetAddress(address, oscOutPort);
+        oscP5.plug(this, "oscThisIn", addrPattern);
 
         int k;
         for (k = 0; k < NUM_ANALOG_PINS; ++k)
-            pins[k] = new AnalogPin(arduino,k);
-            //arduino.pinMode(k, Arduino.INPUT);
+            pins[k] = new AnalogPin(arduino,k, k);
 
 
         for (; k < pins.length; ++k)
-            pins[k] = new DigitalPin(arduino,k-NUM_ANALOG_PINS);
-            arduino.pinMode(k, Arduino.INPUT);
+            pins[k] = new DigitalPin(arduino,k-NUM_ANALOG_PINS, k-NUM_ANALOG_PINS);
     }
 
     public Pin getPin(int index){
@@ -50,11 +49,26 @@ public class OscSwitch {
         }
     }
 
+    public void oscOutPin(int pinNum) {
+            if (pins[pinNum].hasChanged()) {
+                oscThisOut(pinNum);
+            }
+    }
 
-    public void oscThisOut(int k) {
+    private void oscThisOut(int k) {
         OscMessage msg = new OscMessage("/" + pins[k].tag);
         msg.add(pins[k].value());
         oscP5.send(msg, remoteLocation);
-
     }
+
+    public void oscThisIn(int iVal){
+        inIVal = iVal;
+    }
+
+    public void oscInPin (int nPin){
+        oscThisIn(inIVal);
+        pins[nPin].writePin(inIVal);
+        System.out.println("value: "+inIVal);
+    }
+
 }

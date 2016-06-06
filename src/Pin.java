@@ -12,18 +12,15 @@ public abstract class Pin{
     public String tag;
     public Firmata firm;
     public Arduino arduino;
-    public int pin;
+    public int readPin;
+    public int writePin;
 
-    public class FirmataWriter implements Firmata.Writer {
-        public void write(int val) {
-            //not implemented yet
-        }
-    }
 
-    public  Pin(Arduino arduino,String type, int num){
+    public  Pin(Arduino arduino,String type, int rNum, int wNum){
         this.arduino= arduino;
-        this.tag = type+String.valueOf(num);
-        this.pin = num;
+        this.tag = type+String.valueOf(rNum);
+        this.readPin = rNum;
+        this.writePin = wNum;
     }
 
     public boolean hasChanged(){
@@ -38,5 +35,13 @@ public abstract class Pin{
     public int value(){
         return lastValue;
     }
+
+    public int writePin(int val){
+        write(val);
+        return val;
+
+    }
+
+    public abstract int write(int val);
     
 }
