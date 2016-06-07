@@ -1,6 +1,7 @@
 package oscSwitch;
 
 import cc.arduino.*;
+import junit.framework.TestListener;
 import netP5.*;
 import oscP5.*;
 import processing.core.PApplet;
@@ -16,8 +17,8 @@ public class OscSwitch {
     public OscP5 oscP5;
     public Arduino arduino;
     public PApplet applet;
-    int inIVal;
-
+    public int inIVal;
+    public OscMessage theOscMessage;
 
     public OscSwitch(PApplet applet, String address, int oscOutPort, int oscInPort, String addrPattern) {
 
@@ -25,7 +26,7 @@ public class OscSwitch {
         arduino = new Arduino(this.applet, Arduino.list()[0], SERIAL_RATE);
         oscP5 = new OscP5(this, oscInPort);
         remoteLocation = new NetAddress(address, oscOutPort);
-        oscP5.plug(this, "oscThisIn", addrPattern);
+        //oscP5.plug(this, "oscThisIn", addrPattern);
 
         int k;
         for (k = 0; k < NUM_ANALOG_PINS; ++k)
@@ -35,7 +36,9 @@ public class OscSwitch {
         for (; k < pins.length; ++k)
             pins[k] = new DigitalPin(arduino,k-NUM_ANALOG_PINS, k-NUM_ANALOG_PINS);
     }
-
+    
+    
+    
     public Pin getPin(int index){
         return pins[index];
     }
@@ -49,26 +52,53 @@ public class OscSwitch {
         }
     }
 
-    public void oscOutPin(int pinNum) {
+    public void oscOutPin(String pinTag, int pinNum) {
+        String anPin = "A";
+        String digPin = "D";
+        if (pinTag.equals(anPin)) {
             if (pins[pinNum].hasChanged()) {
                 oscThisOut(pinNum);
             }
+        }
+        if(pinTag.equals(digPin)){
+                if (pins[pinNum + NUM_ANALOG_PINS].hasChanged()) {
+                    oscThisOut(pinNum +NUM_ANALOG_PINS);
+                }
+            }
     }
+
 
     private void oscThisOut(int k) {
         OscMessage msg = new OscMessage("/" + pins[k].tag);
         msg.add(pins[k].value());
         oscP5.send(msg, remoteLocation);
     }
-
+/*
     public void oscThisIn(int iVal){
         inIVal = iVal;
     }
+*/
 
-    public void oscInPin (int nPin){
-        oscThisIn(inIVal);
-        pins[nPin].writePin(inIVal);
-        System.out.println("value: "+inIVal);
+    public void oscEvent(OscMessage theOscMessage){
+        this.theOscMessage=theOscMessage;
+        System.out.print("### received an osc message.");
+        System.out.print(" message: "+theOscMessage);
+        System.out.print(" addrpattern: "+theOscMessage.addrPattern());
+        System.out.println(" typetag: "+theOscMessage.typetag());
+        inIVal = theOscMessage.get(0).intValue();
+    }
+
+    public void oscInPin (String pinTag, int pinNum){
+        String anPin = "A";
+        String digPin = "D";
+        if (pinTag.equals(anPin)) {
+            oscEvent(theOscMessage);
+            pins[pinNum].writePin(inIVal);
+        }
+        if(pinTag.equals(digPin)){
+            oscEvent(theOscMessage);
+            pins[pinNum + NUM_ANALOG_PINS].writePin(inIVal);
+        }
     }
 
 }
