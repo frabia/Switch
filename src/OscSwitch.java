@@ -1,7 +1,6 @@
 package oscSwitch;
 
 import cc.arduino.*;
-import junit.framework.TestListener;
 import netP5.*;
 import oscP5.*;
 import processing.core.PApplet;
@@ -13,19 +12,34 @@ public class OscSwitch {
     // SERIAL_RATE=9600 implies that you load the FB_StandarFirmata firmaware inside the arduino board
     private static final int SERIAL_RATE=9600;
     public Pin[] pins = new Pin[NUM_ANALOG_PINS + NUM_DIGITAL_PINS];
-    public NetAddress remoteLocation;
+    public int pinIndx[] = new int[NUM_ANALOG_PINS + NUM_DIGITAL_PINS];
+
+    //public NetAddress remoteLocation;
+    public int msgGetVal;
     public OscP5 oscP5;
     public Arduino arduino;
     public PApplet applet;
     public int inIVal;
-    public OscMessage theOscMessage;
+    public OscMessage oscMessage;
+    public OscProperties properties;
 
     public OscSwitch(PApplet applet, String address, int oscOutPort, int oscInPort, String addrPattern) {
 
         this.applet = applet;
         arduino = new Arduino(this.applet, Arduino.list()[0], SERIAL_RATE);
-        oscP5 = new OscP5(this, oscInPort);
-        remoteLocation = new NetAddress(address, oscOutPort);
+        properties = new OscProperties();
+        properties.setRemoteAddress(address,oscOutPort);
+        properties.setListeningPort(oscInPort);
+        properties.setDatagramSize(1024);
+        oscP5 = new OscP5(this, properties.listeningPort());
+
+        OscMessage initMsg = new OscMessage(addrPattern);
+        for (int k=0; k < NUM_ANALOG_PINS + NUM_DIGITAL_PINS; k++) {
+            pinIndx[k] = 0;
+            initMsg.add(pinIndx);
+        }
+        oscMessage=initMsg;
+        //remoteLocation = new NetAddress(address, oscOutPort);
         //oscP5.plug(this, "oscThisIn", addrPattern);
 
         int k;
@@ -37,12 +51,10 @@ public class OscSwitch {
             pins[k] = new DigitalPin(arduino,k-NUM_ANALOG_PINS, k-NUM_ANALOG_PINS);
     }
     
-    
-    
+
     public Pin getPin(int index){
         return pins[index];
     }
-
 
     public void oscOut() {
         for (int k = 0; k < pins.length; ++k) {
@@ -67,11 +79,10 @@ public class OscSwitch {
             }
     }
 
-
     private void oscThisOut(int k) {
         OscMessage msg = new OscMessage("/" + pins[k].tag);
         msg.add(pins[k].value());
-        oscP5.send(msg, remoteLocation);
+        oscP5.send(msg, properties.remoteAddress());
     }
 /*
     public void oscThisIn(int iVal){
@@ -80,23 +91,25 @@ public class OscSwitch {
 */
 
     public void oscEvent(OscMessage theOscMessage){
-        this.theOscMessage=theOscMessage;
-        System.out.print("### received an osc message.");
-        System.out.print(" message: "+theOscMessage);
-        System.out.print(" addrpattern: "+theOscMessage.addrPattern());
-        System.out.println(" typetag: "+theOscMessage.typetag());
-        inIVal = theOscMessage.get(0).intValue();
+        oscMessage=theOscMessage;
+//        System.out.print("### received an osc message.");
+  //      System.out.print(" addrpattern: "+theOscMessage.addrPattern());
+    //    System.out.print(" typetag: "+theOscMessage.typetag());
+        inIVal =theOscMessage.get(msgGetVal).intValue();
+        System.out.println(" val: "+inIVal);
+
     }
 
-    public void oscInPin (String pinTag, int pinNum){
+    public void oscInPin (String pinTag, int pinNum, int oscMsgGetVal){
+        msgGetVal=oscMsgGetVal;
         String anPin = "A";
         String digPin = "D";
         if (pinTag.equals(anPin)) {
-            oscEvent(theOscMessage);
+            oscEvent(oscMessage);
             pins[pinNum].writePin(inIVal);
         }
         if(pinTag.equals(digPin)){
-            oscEvent(theOscMessage);
+            oscEvent(oscMessage);
             pins[pinNum + NUM_ANALOG_PINS].writePin(inIVal);
         }
     }
