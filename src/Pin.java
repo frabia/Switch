@@ -1,16 +1,11 @@
 package oscSwitch;
 
-
-import org.firmata.Firmata;
 import cc.arduino.*;
-import processing.core.PApplet;
-
 
 public abstract class Pin{
     
     public int lastValue;
     public String tag;
-    public Firmata firm;
     public Arduino arduino;
     public int readPin;
     public int writePin;
