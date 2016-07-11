@@ -4,22 +4,25 @@ import cc.arduino.*;
 import oscP5.*;
 import processing.core.PApplet;
 
+import java.util.ArrayList;
+
 public class OscSwitch {
 
-    private static final int NUM_ANALOG_PINS = 6;
-    private static final int NUM_DIGITAL_PINS = 14;
+    public static final int NUM_ANALOG_PINS = 6;
+    public static final int NUM_DIGITAL_PINS = 14;
     // SERIAL_RATE=9600 implies that you load the FB_StandarFirmata firmaware inside the arduino board
     private static final int SERIAL_RATE=9600;
+
     public Pin[] pins = new Pin[NUM_ANALOG_PINS + NUM_DIGITAL_PINS];
-    public int pinIndx[] = new int[NUM_ANALOG_PINS + NUM_DIGITAL_PINS];
-    //public int activeInPins[]
-    //public int activeOutPins[]
-    //readPins()
 
     public int msgGetVal;
     public OscP5 oscP5;
     public Arduino arduino;
     public PApplet applet;
+    public ArrayList<Pin> activeInDigPins = new ArrayList<Pin>();
+    public ArrayList<Pin> activeOutDigPins = new ArrayList<Pin>();
+    public ArrayList<Pin> activeInAnPins = new ArrayList<Pin>();
+    public ArrayList<Pin> activeOutAnPins = new ArrayList<Pin>();
     public int inIVal;
     public OscMessage oscMessage;
     public OscProperties properties;
@@ -35,107 +38,155 @@ public class OscSwitch {
         properties.setListeningPort(oscInPort);
         properties.setDatagramSize(1024);
         oscP5 = new OscP5(this, properties.listeningPort());
-
         addrPattern=addrPat;
+    }
 
-        OscMessage initMsg = new OscMessage(addrPat);
-        for (int n=0; n < pins.length; ++n) {
-            pinIndx[n] = 0;
+    public void setActiveInPins(int nPin) {
+        if (nPin >= NUM_ANALOG_PINS){
+          this.activeInDigPins.add(new DigitalPin(arduino, nPin-NUM_ANALOG_PINS));
+
         }
-        initMsg.add(pinIndx);
-        oscMessage=initMsg;
-        System.out.print("### Osc init message.");
-        System.out.println(" addrpattern: "+oscMessage.addrPattern());
-        //System.out.print(" typetag: "+oscMessage.typetag());
-        //remoteLocation = new NetAddress(address, oscOutPort);
-        //oscP5.plug(this, "oscThisIn", addrPattern);
-
-        int k;
-        for (k = 0; k < NUM_ANALOG_PINS; ++k)
-            pins[k] = new AnalogPin(arduino,k, k);
-
-
-        for (; k < pins.length; ++k)
-            pins[k] = new DigitalPin(arduino,k-NUM_ANALOG_PINS, k-NUM_ANALOG_PINS);
+        else {
+            this.activeInAnPins.add(new AnalogPin(arduino, nPin));
+        }
     }
 
+    public void setActiveOutPins(int nPin) {
+        if (nPin >= NUM_ANALOG_PINS){
+            this.activeOutDigPins.add(new DigitalPin(arduino, nPin-NUM_ANALOG_PINS));
 
-    public Pin getPin(int index){
-        return pins[index];
+        }
+        else {
+            this.activeOutAnPins.add(new AnalogPin(arduino, nPin));
+        }
     }
-
-    public void oscOut() {
-        for (int k = 0; k < pins.length; ++k) {
-            if (pins[k].hasChanged()) {
-                oscThisOut(k);
+    public void removeInDigPin(int nPin){
+        for (int i = 0; i < this.activeInDigPins.size(); i++) {
+            Pin pin = this.activeInDigPins.get(i);
+            if(nPin-NUM_ANALOG_PINS==pin.num) {
+                this.activeInDigPins.remove(i);
+            }
+        }
+    }
+    public void removeOutDigPin(int nPin){
+        for (int i = 0; i < this.activeOutDigPins.size(); i++) {
+            Pin pin = this.activeOutDigPins.get(i);
+            if(nPin-NUM_ANALOG_PINS==pin.num) {
+                this.activeOutDigPins.remove(i);
             }
         }
     }
 
-    public void oscOutPin(String pinTag, int pinNum) {
-        String anPin = "A";
-        String digPin = "D";
-
-        if (pinTag.equals(anPin))
-            if (pinNum >= NUM_ANALOG_PINS)
-                System.out.println("OUT pin out of ANALOG bound");
-            else if (pins[pinNum].hasChanged())
-                    oscThisOut(pinNum);
-
-        if (pinTag.equals(digPin))
-            if (pinNum >= NUM_DIGITAL_PINS)
-                System.out.println("OUT pin out of DIGITAL bound");
-            else if (pins[pinNum + NUM_ANALOG_PINS].hasChanged())
-                    oscThisOut(pinNum + NUM_ANALOG_PINS);
-
+    public void removeInAnPin(int nPin){
+        for (int i = 0; i < this.activeInAnPins.size(); i++) {
+            Pin pin = this.activeInAnPins.get(i);
+            if(nPin==pin.num) {
+                this.activeInAnPins.remove(i);
+            }
+        }
     }
 
-    private void oscThisOut(int k) {
-        OscMessage msg = new OscMessage("/" + pins[k].tag);
-        msg.add(pins[k].value());
-        oscP5.send(msg, properties.remoteAddress());
+    public void removeOutAnPin(int nPin){
+        for (int i = 0; i < this.activeOutAnPins.size(); i++) {
+            Pin pin = this.activeOutAnPins.get(i);
+            if(nPin==pin.num) {
+                this.activeOutAnPins.remove(i);
+            }
+        }
     }
 
+
+
+    public void readFromArdDig(int nPin) {
+        for (int i = 0; i < this.activeOutDigPins.size(); i++) {
+            Pin pin = this.activeOutDigPins.get(i);
+            if (pin.hasChanged(nPin)){
+                oscThisOutDig(nPin);
+            }
+        }
+    }
+    public void readFromArdAn(int nPin) {
+        for (int i = 0; i < this.activeOutAnPins.size(); i++) {
+            Pin pin = this.activeOutAnPins.get(i);
+            if (pin.hasChanged(nPin)){
+                oscThisOutAn(nPin);
+            }
+        }
+    }
+
+    private void oscThisOutAn(int k) {
+        for (int i = 0; i < this.activeOutAnPins.size(); i++) {
+            Pin pin = this.activeOutAnPins.get(i);
+            OscMessage msg = new OscMessage("/" + pin.tag);
+            msg.add(pin.value());
+            oscP5.send(msg, properties.remoteAddress());
+        }
+    }
+    private void oscThisOutDig(int k) {
+        for (int i = 0; i < this.activeOutDigPins.size(); i++) {
+            Pin pin = this.activeOutDigPins.get(i);
+            OscMessage msg = new OscMessage("/" + pin.tag);
+            msg.add(pin.value());
+            oscP5.send(msg, properties.remoteAddress());
+        }
+    }
+
+    public void writeToArdDig(int nPin, int oscMsgGetVal){
+        msgGetVal=oscMsgGetVal;
+        for (int i = 0; i < this.activeInDigPins.size(); i++) {
+            Pin pin = this.activeInDigPins.get(i);
+            pin.writePin(nPin, inIVal);
+        }
+    }
+
+    public void writeToArdAn(int nPin, int oscMsgGetVal){
+        msgGetVal=oscMsgGetVal;
+        for (int i = 0; i < this.activeInAnPins.size(); i++) {
+            Pin pin = this.activeInAnPins.get(i);
+            pin.writePin(nPin, inIVal);
+        }
+    }
 
     public void oscEvent(OscMessage theOscMessage) {
-
-        int msgGetVal1= msgGetVal-1;
-        if (msgGetVal1 < 0) {
-            msgGetVal1 = 0;
-        }
-
-        String oscLength = new String(theOscMessage.typetag());
-        int intOscLength = oscLength.length();
-        if (msgGetVal1 < intOscLength) {
-            System.out.println("Array length: "+intOscLength+", msgGetVal: "+msgGetVal+", msgGetVal-1: "+(msgGetVal1));
-
-            oscMessage = theOscMessage;
-            if (theOscMessage.checkAddrPattern(addrPattern) == true) {
-                    inIVal = theOscMessage.get(msgGetVal1).intValue();
-                    System.out.println("Array position: " + (msgGetVal1) + ", Val: " + inIVal);
-            }
-        }else {
-            System.out.println("GetOscMesg out of bound");
+        oscMessage = theOscMessage;
+        if (theOscMessage.checkAddrPattern(addrPattern) == true) {
+            inIVal = theOscMessage.get(msgGetVal).intValue();
         }
     }
 
-    public void oscInPin (String pinTag, int pinNum, int oscMsgGetVal){
-        msgGetVal=oscMsgGetVal;
-        String anPin = "A";
-        String digPin = "D";
+    public boolean isInActive(int nPin) {
+        boolean n = false;
+        for (int i = 0; i < this.activeInAnPins.size(); i++) {
+            Pin pin = this.activeInAnPins.get(i);
+            if(pin.num == nPin) {
+                 n = true;
+            }
+        }
+        for (int i = 0; i < this.activeInDigPins.size(); i++) {
+            Pin pin = this.activeInDigPins.get(i);
+            if(pin.num == nPin) {
+                n = true;
+            }
+        }
 
-        if (pinTag.equals(anPin))
-            if (pinNum >= NUM_ANALOG_PINS)
-                System.out.println("IN pin out of ANALOG bound");
-            else {oscEvent(oscMessage);
-                pins[pinNum].writePin(inIVal);}
+        return n;
+    }
+    public boolean isOutActive(int nPin) {
+        boolean n = false;
+        for (int i = 0; i < this.activeOutAnPins.size(); i++) {
+            Pin pin = this.activeOutAnPins.get(i);
+            if(pin.num == nPin) {
+                n = true;
+            }
+        }
+        for (int i = 0; i < this.activeOutDigPins.size(); i++) {
+            Pin pin = this.activeOutDigPins.get(i);
+            if(pin.num == nPin) {
+                n = true;
+            }
+        }
 
-        if(pinTag.equals(digPin))
-            if (pinNum >= NUM_DIGITAL_PINS)
-                System.out.println("IN pin out of DIGITAL bound");
-        else {oscEvent(oscMessage);
-            pins[pinNum + NUM_ANALOG_PINS].writePin(inIVal);}
-
+        return n;
     }
 
 }

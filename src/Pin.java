@@ -7,36 +7,41 @@ public abstract class Pin{
     public int lastValue;
     public String tag;
     public Arduino arduino;
-    public int readPin;
-    public int writePin;
+    public int num;
+    public String type;
 
 
-    public  Pin(Arduino arduino,String type, int rNum, int wNum){
+    public  Pin(Arduino arduino, String type, int nPin){
         this.arduino= arduino;
-        this.tag = type+String.valueOf(rNum);
-        this.readPin = rNum;
-        this.writePin = wNum;
+        this.type = type;
+        this.tag = type+String.valueOf(nPin);
+        this.num = nPin;
     }
 
-    public boolean hasChanged(){
-        int v = read();
+    public boolean hasChanged(int nPin){
+        int v = read(nPin);
         boolean result = v != lastValue;
         lastValue = v;
         return (result);
     }
 
-    public abstract int read();
+    public abstract int read(int nPin);
     
     public int value(){
         return lastValue;
     }
 
-    public int writePin(int val){
-        write(val);
+    public int writePin(int nPin, int val){
+        write(nPin, val);
         return val;
 
     }
 
-    public abstract int write(int val);
+    public abstract int write(int nPin, int val);
+
+   // public boolean isPin(String type, int num){
+
+     //   return this.type.equals(type) && this.num == num;
+    //}
     
 }
