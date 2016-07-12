@@ -13,8 +13,6 @@ public class OscSwitch {
     // SERIAL_RATE=9600 implies that you load the FB_StandarFirmata firmaware inside the arduino board
     private static final int SERIAL_RATE=9600;
 
-    public Pin[] pins = new Pin[NUM_ANALOG_PINS + NUM_DIGITAL_PINS];
-
     public int msgGetVal;
     public OscP5 oscP5;
     public Arduino arduino;
@@ -44,7 +42,6 @@ public class OscSwitch {
     public void setActiveInPins(int nPin) {
         if (nPin >= NUM_ANALOG_PINS){
           this.activeInDigPins.add(new DigitalPin(arduino, nPin-NUM_ANALOG_PINS));
-
         }
         else {
             this.activeInAnPins.add(new AnalogPin(arduino, nPin));
@@ -54,67 +51,68 @@ public class OscSwitch {
     public void setActiveOutPins(int nPin) {
         if (nPin >= NUM_ANALOG_PINS){
             this.activeOutDigPins.add(new DigitalPin(arduino, nPin-NUM_ANALOG_PINS));
-
         }
         else {
             this.activeOutAnPins.add(new AnalogPin(arduino, nPin));
         }
     }
-    public void removeInDigPin(int nPin){
-        for (int i = 0; i < this.activeInDigPins.size(); i++) {
-            Pin pin = this.activeInDigPins.get(i);
-            if(nPin-NUM_ANALOG_PINS==pin.num) {
-                this.activeInDigPins.remove(i);
-            }
-        }
-    }
-    public void removeOutDigPin(int nPin){
-        for (int i = 0; i < this.activeOutDigPins.size(); i++) {
-            Pin pin = this.activeOutDigPins.get(i);
-            if(nPin-NUM_ANALOG_PINS==pin.num) {
-                this.activeOutDigPins.remove(i);
-            }
-        }
-    }
 
-    public void removeInAnPin(int nPin){
-        for (int i = 0; i < this.activeInAnPins.size(); i++) {
-            Pin pin = this.activeInAnPins.get(i);
-            if(nPin==pin.num) {
-                this.activeInAnPins.remove(i);
+    public void removeInPin(int nPin){
+        if (nPin >= NUM_ANALOG_PINS){
+            for (int i = 0; i < this.activeInDigPins.size(); i++) {
+                Pin pin = this.activeInDigPins.get(i);
+                if(nPin-NUM_ANALOG_PINS==pin.num) {
+                    this.activeInDigPins.remove(i);
+                }
+            }
+        }else{
+            for (int i = 0; i < this.activeInAnPins.size(); i++) {
+                Pin pin = this.activeInAnPins.get(i);
+                if(nPin==pin.num) {
+                    this.activeInAnPins.remove(i);
+                }
             }
         }
     }
 
-    public void removeOutAnPin(int nPin){
-        for (int i = 0; i < this.activeOutAnPins.size(); i++) {
-            Pin pin = this.activeOutAnPins.get(i);
-            if(nPin==pin.num) {
-                this.activeOutAnPins.remove(i);
+    public void removeOutPin(int nPin){
+        if (nPin >= NUM_ANALOG_PINS){
+            for (int i = 0; i < this.activeOutDigPins.size(); i++) {
+                Pin pin = this.activeOutDigPins.get(i);
+                if(nPin-NUM_ANALOG_PINS==pin.num) {
+                    this.activeOutDigPins.remove(i);
+                }
+            }
+        }else{
+            for (int i = 0; i < this.activeOutAnPins.size(); i++) {
+                Pin pin = this.activeOutAnPins.get(i);
+                if(nPin==pin.num) {
+                    this.activeOutAnPins.remove(i);
+                }
             }
         }
     }
 
 
-
-    public void readFromArdDig(int nPin) {
-        for (int i = 0; i < this.activeOutDigPins.size(); i++) {
-            Pin pin = this.activeOutDigPins.get(i);
-            if (pin.hasChanged(nPin)){
-                oscThisOutDig(nPin);
+    public void readFromArd(int nPin) {
+        if (nPin >= NUM_ANALOG_PINS){
+            for (int i = 0; i < this.activeOutDigPins.size(); i++) {
+                Pin pin = this.activeOutDigPins.get(i);
+                if (pin.hasChanged(nPin)){
+                    oscThisOutDig();
+                }
+            }
+        }else{
+            for (int i = 0; i < this.activeOutAnPins.size(); i++) {
+                Pin pin = this.activeOutAnPins.get(i);
+                if (pin.hasChanged(nPin)){
+                    oscThisOutAn();
+                }
             }
         }
     }
-    public void readFromArdAn(int nPin) {
-        for (int i = 0; i < this.activeOutAnPins.size(); i++) {
-            Pin pin = this.activeOutAnPins.get(i);
-            if (pin.hasChanged(nPin)){
-                oscThisOutAn(nPin);
-            }
-        }
-    }
 
-    private void oscThisOutAn(int k) {
+    private void oscThisOutAn() {
         for (int i = 0; i < this.activeOutAnPins.size(); i++) {
             Pin pin = this.activeOutAnPins.get(i);
             OscMessage msg = new OscMessage("/" + pin.tag);
@@ -122,7 +120,7 @@ public class OscSwitch {
             oscP5.send(msg, properties.remoteAddress());
         }
     }
-    private void oscThisOutDig(int k) {
+    private void oscThisOutDig() {
         for (int i = 0; i < this.activeOutDigPins.size(); i++) {
             Pin pin = this.activeOutDigPins.get(i);
             OscMessage msg = new OscMessage("/" + pin.tag);
@@ -131,19 +129,18 @@ public class OscSwitch {
         }
     }
 
-    public void writeToArdDig(int nPin, int oscMsgGetVal){
+    public void writeToArd(int nPin, int oscMsgGetVal){
         msgGetVal=oscMsgGetVal;
-        for (int i = 0; i < this.activeInDigPins.size(); i++) {
-            Pin pin = this.activeInDigPins.get(i);
-            pin.writePin(nPin, inIVal);
-        }
-    }
-
-    public void writeToArdAn(int nPin, int oscMsgGetVal){
-        msgGetVal=oscMsgGetVal;
-        for (int i = 0; i < this.activeInAnPins.size(); i++) {
-            Pin pin = this.activeInAnPins.get(i);
-            pin.writePin(nPin, inIVal);
+        if (nPin >= NUM_ANALOG_PINS){
+            for (int i = 0; i < this.activeInDigPins.size(); i++) {
+                Pin pin = this.activeInDigPins.get(i);
+                pin.writePin(nPin-NUM_ANALOG_PINS, inIVal);
+            }
+        }else{
+            for (int i = 0; i < this.activeInAnPins.size(); i++) {
+                Pin pin = this.activeInAnPins.get(i);
+                pin.writePin(nPin, inIVal);
+            }
         }
     }
 
@@ -156,36 +153,40 @@ public class OscSwitch {
 
     public boolean isInActive(int nPin) {
         boolean n = false;
-        for (int i = 0; i < this.activeInAnPins.size(); i++) {
-            Pin pin = this.activeInAnPins.get(i);
-            if(pin.num == nPin) {
-                 n = true;
+        if (nPin >= NUM_ANALOG_PINS){
+            for (int i = 0; i < this.activeInDigPins.size(); i++) {
+                Pin pin = this.activeInDigPins.get(i);
+                if(pin.num == nPin-NUM_ANALOG_PINS) {
+                    n = true;
+                }
+            }
+        }else {
+            for (int i = 0; i < this.activeInAnPins.size(); i++) {
+                Pin pin = this.activeInAnPins.get(i);
+                if (pin.num == nPin) {
+                    n = true;
+                }
             }
         }
-        for (int i = 0; i < this.activeInDigPins.size(); i++) {
-            Pin pin = this.activeInDigPins.get(i);
-            if(pin.num == nPin) {
-                n = true;
-            }
-        }
-
         return n;
     }
     public boolean isOutActive(int nPin) {
         boolean n = false;
-        for (int i = 0; i < this.activeOutAnPins.size(); i++) {
-            Pin pin = this.activeOutAnPins.get(i);
-            if(pin.num == nPin) {
-                n = true;
+        if (nPin >= NUM_ANALOG_PINS){
+            for (int i = 0; i < this.activeOutDigPins.size(); i++) {
+                Pin pin = this.activeOutDigPins.get(i);
+                if(pin.num == nPin-NUM_ANALOG_PINS) {
+                    n = true;
+                }
+            }
+        }else{
+            for (int i = 0; i < this.activeOutAnPins.size(); i++) {
+                Pin pin = this.activeOutAnPins.get(i);
+                if(pin.num == nPin) {
+                    n = true;
+                }
             }
         }
-        for (int i = 0; i < this.activeOutDigPins.size(); i++) {
-            Pin pin = this.activeOutDigPins.get(i);
-            if(pin.num == nPin) {
-                n = true;
-            }
-        }
-
         return n;
     }
 

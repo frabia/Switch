@@ -39,9 +39,5 @@ public abstract class Pin{
 
     public abstract int write(int nPin, int val);
 
-   // public boolean isPin(String type, int num){
 
-     //   return this.type.equals(type) && this.num == num;
-    //}
-    
 }
